@@ -3,6 +3,13 @@ import 'dart:io' show Platform;
 import 'models.dart';
 import 'windows/windows_font_scanner.dart' as windows;
 
+/// Provides static methods to scan system font families and query their
+/// supported weights.
+///
+/// Currently supports Windows (DirectWrite). macOS support is planned.
+///
+/// Results are cached after the first [scan] call. Use [clearCache] to
+/// force a rescan.
 class JustFontScan {
   /// Cache is isolate-local. Calling [scan] from different isolates will
   /// trigger separate scans.
@@ -16,6 +23,7 @@ class JustFontScan {
     return _cache!;
   }
 
+  /// Clears the cached scan result so the next [scan] call rescans the system.
   static void clearCache() {
     _cache = null;
   }

@@ -1,9 +1,14 @@
 name: just_font_scan
 description: Scan system font families and their supported weights using platform-native APIs (DirectWrite on Windows).
 version: 0.1.0
+repository: https://github.com/kihyun1998/just_font_scan
+
+platforms:
+  windows:
 
 environment:
-  sdk: ^3.9.2
+  sdk: ">=3.0.0 <4.0.0"
+  flutter: ">=3.10.0"
 
 dependencies:
   ffi: ^2.1.4
