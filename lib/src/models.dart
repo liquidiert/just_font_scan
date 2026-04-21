@@ -1,4 +1,4 @@
-import 'package:collection/collection.dart';
+import 'package:just_font_scan/src/list.extension.dart';
 
 /// Represents a system font family with its supported weights.
 ///
