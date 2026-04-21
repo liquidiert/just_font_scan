@@ -120,10 +120,54 @@ FontFamily? _scanFamily(
     // Skip vertical writing fonts
     if (name.startsWith('@')) return null;
 
-    final weights = _getFamilyWeights(family, arena);
-    if (weights.isEmpty) return null;
+    // Enumerate fonts in the family to collect weight, style and file path per face.
+    final fontCount = fontListGetFontCount(family).clamp(0, kMaxFontCount);
+    final children = <Font>[];
 
-    return FontFamily(name: name, weights: weights);
+    for (var fi = 0; fi < fontCount; fi++) {
+      final ppFont = arena<Pointer<IntPtr>>();
+      final hrFont = fontListGetFont(family, fi, ppFont);
+      if (!succeeded(hrFont)) continue;
+
+      final font = ppFont.value;
+      if (font.address == 0) continue;
+
+      try {
+        final weight = fontGetWeight(font);
+        if (weight < kDWriteFontWeightMin || weight > kDWriteFontWeightMax) {
+          continue;
+        }
+
+        // Determine style from font's style and weight. DWRITE font style values:
+        // 0 = normal, 1 = oblique, 2 = italic
+        final styleInt = fontGetStyle(font);
+        FontStyle style;
+        if (styleInt == 2) {
+          // italic
+          style = weight >= 700 ? FontStyle.boldItalic : FontStyle.italic;
+        } else if (styleInt == 1) {
+          // oblique -> treat as italic-like
+          style = weight >= 700 ? FontStyle.boldItalic : FontStyle.italic;
+        } else {
+          // normal: map bold weights to FontStyle.bold and lighter to regular.
+          if (weight >= 700) {
+            style = FontStyle.bold;
+          } else {
+            style = FontStyle.regular;
+          }
+        }
+
+        // Best-effort file path for this font face.
+        final filePath = getFirstFilePathForFont(font);
+
+        children.add(Font(weight: weight, style: style, filePath: filePath));
+      } finally {
+        comRelease(font);
+      }
+    }
+
+    if (children.isEmpty) return null;
+    return FontFamily(name: name, children: children);
   } finally {
     comRelease(family);
   }
@@ -175,30 +219,4 @@ String? _getLocalizedString(Pointer<IntPtr> strings, Arena arena) {
   if (!succeeded(hr)) return null;
 
   return buffer.toDartString(length: length);
-}
-
-List<int> _getFamilyWeights(Pointer<IntPtr> family, Arena arena) {
-  final fontCount = fontListGetFontCount(family).clamp(0, kMaxFontCount);
-  final weightSet = <int>{};
-
-  for (var i = 0; i < fontCount; i++) {
-    final ppFont = arena<Pointer<IntPtr>>();
-    final hr = fontListGetFont(family, i, ppFont);
-    if (!succeeded(hr)) continue;
-
-    final font = ppFont.value;
-    if (font.address == 0) continue;
-
-    try {
-      final weight = fontGetWeight(font);
-      if (weight >= kDWriteFontWeightMin && weight <= kDWriteFontWeightMax) {
-        weightSet.add(weight);
-      }
-    } finally {
-      comRelease(font);
-    }
-  }
-
-  final weights = weightSet.toList()..sort();
-  return weights;
 }

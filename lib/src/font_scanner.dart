@@ -2,6 +2,7 @@ import 'dart:io' show Platform;
 
 import 'models.dart';
 import 'windows/windows_font_scanner.dart' as windows;
+import 'macos/macos_font_scanner.dart' as macos;
 
 /// Provides static methods to scan system font families and query their
 /// supported weights.
@@ -38,7 +39,7 @@ class JustFontScan {
     final lowerName = familyName.toLowerCase();
     for (final family in families) {
       if (family.name.toLowerCase() == lowerName) {
-        return family.weights;
+        return family.children.map((f) => f.weight).toList();
       }
     }
     return const [400];
@@ -47,8 +48,9 @@ class JustFontScan {
   static List<FontFamily> _scan() {
     if (Platform.isWindows) {
       return windows.scanFonts();
+    } else if (Platform.isMacOS) {
+      return macos.scanFonts();
     }
-    // TODO(just_font_scan): Add macOS support using CoreText API.
     return const [];
   }
 }

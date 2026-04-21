@@ -8,6 +8,19 @@ import 'dart:io' show Platform;
 
 import 'package:ffi/ffi.dart';
 
+/// Helper: convert a UTF-16 pointer [Pointer<Uint16>] with a known length into
+/// a Dart [String]. Trims trailing NUL code units.
+String utf16PointerToString(Pointer<Uint16> ptr, int length) {
+  if (ptr.address == 0 || length <= 0) return '';
+  final units = ptr.asTypedList(length);
+  var end = length;
+  while (end > 0 && units[end - 1] == 0) {
+    end--;
+  }
+  if (end == 0) return '';
+  return String.fromCharCodes(units.sublist(0, end));
+}
+
 // --- HRESULT helper ---
 
 bool succeeded(int hr) => hr >= 0;
@@ -350,6 +363,15 @@ int fontGetWeight(Pointer<IntPtr> font) {
   return fn(font);
 }
 
+/// IDWriteFont::GetStyle — vtable slot 6
+typedef _GetStyleNative = Int32 Function(Pointer<IntPtr> self);
+typedef _GetStyleDart = int Function(Pointer<IntPtr> self);
+
+int fontGetStyle(Pointer<IntPtr> font) {
+  final fn = vtableSlot<_GetStyleNative>(font, 6).asFunction<_GetStyleDart>();
+  return fn(font);
+}
+
 // --- IDWriteLocalizedStrings vtable ---
 // Verified against dwrite.h.
 // Ref: https://learn.microsoft.com/en-us/windows/win32/api/dwrite/nn-dwrite-idwritelocalizedstrings
@@ -441,4 +463,427 @@ int localizedStringsGetString(
   final fn =
       vtableSlot<_GetStringNative>(strings, 8).asFunction<_GetStringDart>();
   return fn(strings, index, buffer, size);
+}
+
+/// IDWriteFont::CreateFontFace — vtable slot 13
+typedef _CreateFontFaceNative = Int32 Function(
+  Pointer<IntPtr> self,
+  Pointer<Pointer<IntPtr>> fontFace,
+);
+typedef _CreateFontFaceDart = int Function(
+  Pointer<IntPtr> self,
+  Pointer<Pointer<IntPtr>> fontFace,
+);
+
+int fontCreateFontFace(
+  Pointer<IntPtr> font,
+  Pointer<Pointer<IntPtr>> outFontFace,
+) {
+  final fn = vtableSlot<_CreateFontFaceNative>(font, 13)
+      .asFunction<_CreateFontFaceDart>();
+  return fn(font, outFontFace);
+}
+
+/// IDWriteFontFace::GetFiles — vtable slot 5 (best-effort binding)
+typedef _FontFaceGetFilesNative = Int32 Function(
+  Pointer<IntPtr> self,
+  Pointer<Uint32> numberOfFiles,
+  Pointer<Pointer<IntPtr>> files,
+);
+typedef _FontFaceGetFilesDart = int Function(
+  Pointer<IntPtr> self,
+  Pointer<Uint32> numberOfFiles,
+  Pointer<Pointer<IntPtr>> files,
+);
+
+int fontFaceGetFiles(
+  Pointer<IntPtr> fontFace,
+  Pointer<Uint32> outFileCount,
+  Pointer<Pointer<IntPtr>> outFiles,
+) {
+  final fn = vtableSlot<_FontFaceGetFilesNative>(fontFace, 5)
+      .asFunction<_FontFaceGetFilesDart>();
+  return fn(fontFace, outFileCount, outFiles);
+}
+
+/// IDWriteFontFile::GetReferenceKey — vtable slot 3
+typedef _FontFileGetReferenceKeyNative = Int32 Function(
+  Pointer<IntPtr> self,
+  Pointer<Pointer<Void>> key,
+  Pointer<Uint32> keySize,
+);
+typedef _FontFileGetReferenceKeyDart = int Function(
+  Pointer<IntPtr> self,
+  Pointer<Pointer<Void>> key,
+  Pointer<Uint32> keySize,
+);
+
+int fontFileGetReferenceKey(
+  Pointer<IntPtr> fontFile,
+  Pointer<Pointer<Void>> outKey,
+  Pointer<Uint32> outKeySize,
+) {
+  final fn = vtableSlot<_FontFileGetReferenceKeyNative>(fontFile, 3)
+      .asFunction<_FontFileGetReferenceKeyDart>();
+  return fn(fontFile, outKey, outKeySize);
+}
+
+/// IDWriteFontFile::GetLoader — vtable slot 4
+typedef _FontFileGetLoaderNative = Int32 Function(
+  Pointer<IntPtr> self,
+  Pointer<Pointer<IntPtr>> loader,
+);
+typedef _FontFileGetLoaderDart = int Function(
+  Pointer<IntPtr> self,
+  Pointer<Pointer<IntPtr>> loader,
+);
+
+int fontFileGetLoader(
+  Pointer<IntPtr> fontFile,
+  Pointer<Pointer<IntPtr>> outLoader,
+) {
+  final fn = vtableSlot<_FontFileGetLoaderNative>(fontFile, 4)
+      .asFunction<_FontFileGetLoaderDart>();
+  return fn(fontFile, outLoader);
+}
+
+/// IDWriteLocalFontFileLoader::GetFilePathLengthFromKey — vtable slot 4 on the
+/// loader interface (IDWriteLocalFontFileLoader extends IDWriteFontFileLoader)
+typedef _GetFilePathLengthFromKeyNative = Int32 Function(
+  Pointer<IntPtr> self,
+  Pointer<Void> referenceKey,
+  Uint32 referenceKeySize,
+  Pointer<Uint32> filePathLength,
+);
+typedef _GetFilePathLengthFromKeyDart = int Function(
+  Pointer<IntPtr> self,
+  Pointer<Void> referenceKey,
+  int referenceKeySize,
+  Pointer<Uint32> filePathLength,
+);
+
+int loaderGetFilePathLengthFromKey(
+  Pointer<IntPtr> loader,
+  Pointer<Void> referenceKey,
+  int referenceKeySize,
+  Pointer<Uint32> outFilePathLength,
+) {
+  final fn = vtableSlot<_GetFilePathLengthFromKeyNative>(loader, 4)
+      .asFunction<_GetFilePathLengthFromKeyDart>();
+  return fn(loader, referenceKey, referenceKeySize, outFilePathLength);
+}
+
+/// IDWriteLocalFontFileLoader::GetFilePathFromKey — vtable slot 5 on the loader
+/// interface
+typedef _GetFilePathFromKeyNative = Int32 Function(
+  Pointer<IntPtr> self,
+  Pointer<Void> referenceKey,
+  Uint32 referenceKeySize,
+  Pointer<Uint16> filePath,
+  Uint32 filePathSize,
+);
+typedef _GetFilePathFromKeyDart = int Function(
+  Pointer<IntPtr> self,
+  Pointer<Void> referenceKey,
+  int referenceKeySize,
+  Pointer<Uint16> filePath,
+  int filePathSize,
+);
+
+int loaderGetFilePathFromKey(
+  Pointer<IntPtr> loader,
+  Pointer<Void> referenceKey,
+  int referenceKeySize,
+  Pointer<Uint16> outFilePath,
+  int filePathSize,
+) {
+  final fn = vtableSlot<_GetFilePathFromKeyNative>(loader, 5)
+      .asFunction<_GetFilePathFromKeyDart>();
+  return fn(loader, referenceKey, referenceKeySize, outFilePath, filePathSize);
+}
+
+/// High-level helper: extract file paths for a font family using DirectWrite:
+/// - For each font in the family, create an IDWriteFontFace
+/// - Ask the font face for its font files (IDWriteFontFile*[])
+/// - For each IDWriteFontFile call GetReferenceKey; if the loader is a
+///   local file loader (IDWriteLocalFontFileLoader), use it to get the actual
+///   file path via GetFilePathLengthFromKey/GetFilePathFromKey.
+/// Note: this is best-effort. Only files whose loader supports the local-file
+/// path API will yield paths. COM references are released.
+List<String> getFamilyFilePaths(Pointer<IntPtr> family) {
+  final paths = <String>[];
+
+  // Determine number of fonts in the family (IDWriteFontList::GetFontCount — vtable slot 4)
+  final fontCount = fontListGetFontCount(family).clamp(0, kMaxFontCount);
+
+  final ppFont = calloc<Pointer<IntPtr>>();
+  final ppFontFace = calloc<Pointer<IntPtr>>();
+  final pFileCount = calloc<Uint32>();
+  final ppLoader = calloc<Pointer<IntPtr>>();
+  try {
+    for (var i = 0; i < fontCount; i++) {
+      // Get font (IDWriteFontList::GetFont vtable slot 5) — wrapper fontListGetFont used
+      final hrFont = fontListGetFont(family, i, ppFont);
+      if (!succeeded(hrFont)) continue;
+
+      final font = ppFont.value;
+      if (font.address == 0) {
+        continue;
+      }
+
+      try {
+        // Create font face for the font
+        ppFontFace.value = Pointer<IntPtr>.fromAddress(0);
+        final hrCreateFace = fontCreateFontFace(font, ppFontFace);
+        if (!succeeded(hrCreateFace)) continue;
+        final fontFace = ppFontFace.value;
+        if (fontFace.address == 0) continue;
+
+        try {
+          // Get files from the font face
+          pFileCount.value = 0;
+          // First call with null files to get count (some implementations accept nullptr)
+          var hrFiles = fontFaceGetFiles(
+              fontFace, pFileCount, Pointer<Pointer<IntPtr>>.fromAddress(0));
+          final fileCount = pFileCount.value;
+          if (fileCount == 0) continue;
+
+          final filesArray = calloc<Pointer<IntPtr>>(fileCount);
+          try {
+            hrFiles = fontFaceGetFiles(fontFace, pFileCount, filesArray);
+            if (!succeeded(hrFiles)) continue;
+
+            for (var j = 0; j < fileCount; j++) {
+              final file = filesArray[j];
+              if (file.address == 0) continue;
+
+              try {
+                // Get loader for this font file (IDWriteFontFile::GetLoader)
+                ppLoader.value = Pointer<IntPtr>.fromAddress(0);
+                final hrLoader = fontFileGetLoader(file, ppLoader);
+                if (!succeeded(hrLoader)) {
+                  // fallback: try to interpret reference key as path (legacy behavior)
+                  final pKeyPtr = calloc<Pointer<Void>>();
+                  final pKeySize = calloc<Uint32>();
+                  try {
+                    final hrKey =
+                        fontFileGetReferenceKey(file, pKeyPtr, pKeySize);
+                    if (!succeeded(hrKey)) continue;
+                    final keyPtr = pKeyPtr.value;
+                    final keySize = pKeySize.value;
+                    if (keyPtr.address == 0 || keySize == 0) continue;
+                    if (keySize % 2 != 0) continue;
+                    final charCount = keySize ~/ 2;
+                    final pathPtr = Pointer<Uint16>.fromAddress(keyPtr.address);
+                    final raw = utf16PointerToString(pathPtr, charCount);
+                    if (raw.isNotEmpty) {
+                      final trimmed = raw.split('\u0000').first;
+                      if (trimmed.isNotEmpty) paths.add(trimmed);
+                    }
+                  } finally {
+                    calloc.free(pKeyPtr);
+                    calloc.free(pKeySize);
+                  }
+                  continue;
+                }
+
+                final loader = ppLoader.value;
+                if (loader.address == 0) continue;
+
+                try {
+                  // Get reference key first
+                  final pKeyPtr = calloc<Pointer<Void>>();
+                  final pKeySize = calloc<Uint32>();
+                  try {
+                    final hrKey =
+                        fontFileGetReferenceKey(file, pKeyPtr, pKeySize);
+                    if (!succeeded(hrKey)) continue;
+                    final keyPtr = pKeyPtr.value;
+                    final keySize = pKeySize.value;
+                    if (keyPtr.address == 0 || keySize == 0) continue;
+
+                    // Ask loader for path length
+                    final pPathLen = calloc<Uint32>();
+                    try {
+                      final hrLen = loaderGetFilePathLengthFromKey(
+                          loader, keyPtr, keySize, pPathLen);
+                      if (!succeeded(hrLen)) continue;
+                      final pathLen = pPathLen.value;
+                      if (pathLen == 0) continue;
+
+                      final buf = calloc<Uint16>(pathLen + 1);
+                      try {
+                        final hrGet = loaderGetFilePathFromKey(
+                            loader, keyPtr, keySize, buf, pathLen + 1);
+                        if (!succeeded(hrGet)) continue;
+                        final raw = utf16PointerToString(buf, pathLen);
+                        if (raw.isNotEmpty) {
+                          final trimmed = raw.split('\u0000').first;
+                          if (trimmed.isNotEmpty) paths.add(trimmed);
+                        }
+                      } finally {
+                        calloc.free(buf);
+                      }
+                    } finally {
+                      calloc.free(pPathLen);
+                    }
+                  } finally {
+                    calloc.free(pKeyPtr);
+                    calloc.free(pKeySize);
+                  }
+                } finally {
+                  comRelease(loader);
+                }
+              } finally {
+                // Release the IDWriteFontFile COM object
+                comRelease(file);
+              }
+            }
+          } finally {
+            calloc.free(filesArray);
+          }
+        } finally {
+          comRelease(fontFace);
+        }
+      } finally {
+        comRelease(font);
+      }
+    }
+  } finally {
+    calloc.free(ppFont);
+    calloc.free(ppFontFace);
+    calloc.free(pFileCount);
+    calloc.free(ppLoader);
+  }
+
+  return paths;
+}
+
+/// Helper: for a given IDWriteFont, attempt to create a font face, query its
+/// associated font files, and return the first local file path found (or an
+/// empty string if none). This is a convenience wrapper used by higher-level
+/// scanners that want a best-effort per-font file path.
+String getFirstFilePathForFont(Pointer<IntPtr> font) {
+  if (font.address == 0) return '';
+
+  final ppFontFace = calloc<Pointer<IntPtr>>();
+  final pFileCount = calloc<Uint32>();
+  final ppLoader = calloc<Pointer<IntPtr>>();
+  try {
+    ppFontFace.value = Pointer<IntPtr>.fromAddress(0);
+    var hr = fontCreateFontFace(font, ppFontFace);
+    if (!succeeded(hr)) return '';
+
+    final fontFace = ppFontFace.value;
+    if (fontFace.address == 0) return '';
+
+    try {
+      // Get files
+      pFileCount.value = 0;
+      hr = fontFaceGetFiles(
+          fontFace, pFileCount, Pointer<Pointer<IntPtr>>.fromAddress(0));
+      final fileCount = pFileCount.value;
+      if (fileCount == 0) return '';
+
+      final filesArray = calloc<Pointer<IntPtr>>(fileCount);
+      try {
+        hr = fontFaceGetFiles(fontFace, pFileCount, filesArray);
+        if (!succeeded(hr)) return '';
+
+        for (var j = 0; j < fileCount; j++) {
+          final file = filesArray[j];
+          if (file.address == 0) continue;
+
+          try {
+            // Get loader for this font file
+            ppLoader.value = Pointer<IntPtr>.fromAddress(0);
+            final hrLoader = fontFileGetLoader(file, ppLoader);
+            if (!succeeded(hrLoader)) {
+              // Fallback: try to interpret reference key as UTF-16 path
+              final pKeyPtr = calloc<Pointer<Void>>();
+              final pKeySize = calloc<Uint32>();
+              try {
+                final hrKey = fontFileGetReferenceKey(file, pKeyPtr, pKeySize);
+                if (!succeeded(hrKey)) continue;
+                final keyPtr = pKeyPtr.value;
+                final keySize = pKeySize.value;
+                if (keyPtr.address == 0 || keySize == 0) continue;
+                if (keySize % 2 != 0) continue;
+                final charCount = keySize ~/ 2;
+                final pathPtr = Pointer<Uint16>.fromAddress(keyPtr.address);
+                final raw = utf16PointerToString(pathPtr, charCount);
+                if (raw.isNotEmpty) {
+                  final trimmed = raw.split('\u0000').first;
+                  if (trimmed.isNotEmpty) return trimmed;
+                }
+              } finally {
+                calloc.free(pKeyPtr);
+                calloc.free(pKeySize);
+              }
+              continue;
+            }
+
+            final loader = ppLoader.value;
+            if (loader.address == 0) continue;
+
+            try {
+              // Get reference key first
+              final pKeyPtr = calloc<Pointer<Void>>();
+              final pKeySize = calloc<Uint32>();
+              try {
+                final hrKey = fontFileGetReferenceKey(file, pKeyPtr, pKeySize);
+                if (!succeeded(hrKey)) continue;
+                final keyPtr = pKeyPtr.value;
+                final keySize = pKeySize.value;
+                if (keyPtr.address == 0 || keySize == 0) continue;
+
+                // Ask loader for path length
+                final pPathLen = calloc<Uint32>();
+                try {
+                  final hrLen = loaderGetFilePathLengthFromKey(
+                      loader, keyPtr, keySize, pPathLen);
+                  if (!succeeded(hrLen)) continue;
+                  final pathLen = pPathLen.value;
+                  if (pathLen == 0) continue;
+
+                  final buf = calloc<Uint16>(pathLen + 1);
+                  try {
+                    final hrGet = loaderGetFilePathFromKey(
+                        loader, keyPtr, keySize, buf, pathLen + 1);
+                    if (!succeeded(hrGet)) continue;
+                    final raw = utf16PointerToString(buf, pathLen);
+                    if (raw.isNotEmpty) {
+                      final trimmed = raw.split('\u0000').first;
+                      if (trimmed.isNotEmpty) return trimmed;
+                    }
+                  } finally {
+                    calloc.free(buf);
+                  }
+                } finally {
+                  calloc.free(pPathLen);
+                }
+              } finally {
+                calloc.free(pKeyPtr);
+                calloc.free(pKeySize);
+              }
+            } finally {
+              comRelease(loader);
+            }
+          } finally {
+            comRelease(file);
+          }
+        }
+      } finally {
+        calloc.free(filesArray);
+      }
+    } finally {
+      comRelease(fontFace);
+    }
+  } finally {
+    calloc.free(ppFontFace);
+    calloc.free(pFileCount);
+    calloc.free(ppLoader);
+  }
+
+  return '';
 }

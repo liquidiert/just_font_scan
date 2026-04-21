@@ -117,21 +117,86 @@ class _FontFamilyTile extends StatelessWidget {
   final FontFamily family;
   const _FontFamilyTile({required this.family});
 
+  String _styleLabel(FontStyle s) {
+    switch (s) {
+      case FontStyle.regular:
+        return 'Regular';
+      case FontStyle.bold:
+        return 'Bold';
+      case FontStyle.italic:
+        return 'Italic';
+      case FontStyle.boldItalic:
+        return 'Bold Italic';
+      case FontStyle.unknown:
+        return 'Other';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Group fonts by style
+    final Map<FontStyle, List<Font>> grouped = {};
+    for (final f in family.children) {
+      grouped.putIfAbsent(f.style, () => []).add(f);
+    }
+
+    // Stable ordering of styles
+    final styleOrder = [
+      FontStyle.regular,
+      FontStyle.bold,
+      FontStyle.italic,
+      FontStyle.boldItalic,
+      FontStyle.unknown,
+    ];
+
     return ListTile(
       title: Text(family.name),
-      subtitle: Wrap(
-        spacing: 4,
-        runSpacing: 4,
-        children: family.weights.map((w) {
-          return Chip(
-            label: Text('$w', style: const TextStyle(fontSize: 11)),
-            visualDensity: VisualDensity.compact,
-            padding: EdgeInsets.zero,
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          );
-        }).toList(),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (final style in styleOrder)
+            if (grouped.containsKey(style))
+              Padding(
+                padding: const EdgeInsets.only(top: 6.0),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Style label column
+                    SizedBox(
+                      width: 120,
+                      child: Text(
+                        _styleLabel(style),
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                    // Chips for fonts of this style
+                    Expanded(
+                      child: Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: grouped[style]!
+                            .map(
+                              (f) => Tooltip(
+                                message: "Path: ${f.filePath}",
+                                child: Chip(
+                                  label: Text(
+                                    '${f.weight}',
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
+                                  visualDensity: VisualDensity.compact,
+                                  padding: EdgeInsets.zero,
+                                  materialTapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+        ],
       ),
     );
   }
