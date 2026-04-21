@@ -19,10 +19,8 @@ void main() {
         () => expect(mapWeight(-0.79), 100));
     test('midway between Thin(−0.60) and Light(−0.40): tie → lower (200)',
         () => expect(mapWeight(-0.50), 200));
-    test('closer to Light than Regular',
-        () => expect(mapWeight(-0.25), 300));
-    test('closer to Regular than Light',
-        () => expect(mapWeight(-0.15), 400));
+    test('closer to Light than Regular', () => expect(mapWeight(-0.25), 300));
+    test('closer to Regular than Light', () => expect(mapWeight(-0.15), 400));
     test('between Regular(0.00) and Medium(0.23), closer to Medium',
         () => expect(mapWeight(0.15), 500));
     test('between Semibold(0.30) and Bold(0.40), closer to Bold',
@@ -33,8 +31,7 @@ void main() {
         () => expect(mapWeight(0.45), 700));
     test('between Heavy(0.56) and Black(0.62), closer to Heavy',
         () => expect(mapWeight(0.58), 800));
-    test('beyond Black still snaps to 900',
-        () => expect(mapWeight(0.85), 900));
+    test('beyond Black still snaps to 900', () => expect(mapWeight(0.85), 900));
   });
 
   group('mapWeight — out-of-range and NaN fallback to 400', () {
@@ -43,8 +40,7 @@ void main() {
     test('above 1.0', () => expect(mapWeight(1.5), 400));
     test('negative infinity',
         () => expect(mapWeight(double.negativeInfinity), 400));
-    test('positive infinity',
-        () => expect(mapWeight(double.infinity), 400));
+    test('positive infinity', () => expect(mapWeight(double.infinity), 400));
   });
 
   group('mapWeight — never produces 950', () {

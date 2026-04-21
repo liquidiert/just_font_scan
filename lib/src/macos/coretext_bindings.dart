@@ -231,23 +231,27 @@ class MacFontBindings {
     return MacFontBindings._(
       cfRelease:
           cf.lookupFunction<_CFReleaseNative, _CFReleaseDart>('CFRelease'),
-      cfArrayGetCount: cf.lookupFunction<_CFArrayGetCountNative,
-          CFArrayGetCountDart>('CFArrayGetCount'),
+      cfArrayGetCount:
+          cf.lookupFunction<_CFArrayGetCountNative, CFArrayGetCountDart>(
+              'CFArrayGetCount'),
       cfArrayGetValueAtIndex: cf.lookupFunction<_CFArrayGetValueAtIndexNative,
           CFArrayGetValueAtIndexDart>('CFArrayGetValueAtIndex'),
       cfDictionaryGetValue: cf.lookupFunction<_CFDictionaryGetValueNative,
           CFDictionaryGetValueDart>('CFDictionaryGetValue'),
-      cfStringGetLength: cf.lookupFunction<_CFStringGetLengthNative,
-          CFStringGetLengthDart>('CFStringGetLength'),
+      cfStringGetLength:
+          cf.lookupFunction<_CFStringGetLengthNative, CFStringGetLengthDart>(
+              'CFStringGetLength'),
       cfStringGetMaxSize: cf.lookupFunction<
           _CFStringGetMaximumSizeForEncodingNative,
           CFStringGetMaximumSizeForEncodingDart>(
         'CFStringGetMaximumSizeForEncoding',
       ),
-      cfStringGetCString: cf.lookupFunction<_CFStringGetCStringNative,
-          _CFStringGetCStringDart>('CFStringGetCString'),
-      cfNumberGetValue: cf.lookupFunction<_CFNumberGetValueNative,
-          _CFNumberGetValueDart>('CFNumberGetValue'),
+      cfStringGetCString:
+          cf.lookupFunction<_CFStringGetCStringNative, _CFStringGetCStringDart>(
+              'CFStringGetCString'),
+      cfNumberGetValue:
+          cf.lookupFunction<_CFNumberGetValueNative, _CFNumberGetValueDart>(
+              'CFNumberGetValue'),
       ctFontCollectionCreateFromAvailable: ct.lookupFunction<
           _CTFontCollectionCreateFromAvailableFontsNative,
           CTFontCollectionCreateFromAvailableFontsDart>(

@@ -111,8 +111,7 @@ int _copyWeight(
   CFTypeRef desc,
   Arena arena,
 ) {
-  final traits =
-      b.ctFontDescriptorCopyAttribute(desc, b.kFontTraitsAttribute);
+  final traits = b.ctFontDescriptorCopyAttribute(desc, b.kFontTraitsAttribute);
   if (traits.address == 0) return 400;
 
   try {
