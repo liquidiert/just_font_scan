@@ -2,6 +2,7 @@ import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';
 
+import '../limits.dart';
 import '../models.dart';
 import 'coretext_bindings.dart';
 
@@ -11,14 +12,14 @@ import 'coretext_bindings.dart';
 /// Returns an empty list if CoreText is unavailable or any fatal error occurs.
 List<FontFamily> scanFonts() {
   try {
-    return using((arena) => _scan(arena));
+    return using((arena) => _scanWithArena(arena));
   } catch (_) {
     return const [];
   }
 }
 
-List<FontFamily> _scan(Arena arena) {
-  final b = MacFontBindings.load();
+List<FontFamily> _scanWithArena(Arena arena) {
+  final b = MacFontBindings.instance;
   // CoreText internally creates autoreleased NSString/NSDictionary objects.
   // Without a pool, they leak until process exit (~1.3 MB per scan).
   return b.inAutoreleasePool(() => _scanInPool(b, arena));
@@ -47,8 +48,8 @@ List<FontFamily> _scanDescriptorArray(
   Arena arena,
 ) {
   // Descriptor array holds faces, not families; a family may contribute 1–20+
-  // descriptors. Clamp with 10× family limit as a sanity guard.
-  final count = b.cfArrayGetCount(array).clamp(0, kMaxFontFamilyCount * 10);
+  // descriptors.
+  final count = b.cfArrayGetCount(array).clamp(0, kMaxDescriptorCount);
 
   final weightsByFamily = <String, Set<int>>{};
 

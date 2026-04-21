@@ -21,13 +21,7 @@ const int kDWriteFontWeightMin = 1;
 /// but values up to 1000 are accepted by some implementations).
 const int kDWriteFontWeightMax = 1000;
 
-/// Maximum sane font name length in characters.
-const int kMaxFontNameLength = 32767;
-
-/// Maximum sane font family count (guard against corrupt COM data).
-const int kMaxFontFamilyCount = 10000;
-
-/// Maximum sane font count per family.
+/// Maximum sane font count per family (Windows-specific: face iteration cap).
 const int kMaxFontCount = 1000;
 
 // --- GUIDs ---

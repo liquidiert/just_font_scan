@@ -34,7 +34,7 @@ void main() {
         for (final w in family.weights) {
           expect(w, inInclusiveRange(100, 900),
               reason: 'family=${family.name} weights=${family.weights}');
-          expect(w % 100 == 0 || w == 350, isTrue,
+          expect(w % 100 == 0, isTrue,
               reason: 'weight should be a standard bucket, got $w');
         }
       }

@@ -2,6 +2,7 @@ import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';
 
+import '../limits.dart';
 import '../models.dart';
 import 'dwrite_bindings.dart';
 

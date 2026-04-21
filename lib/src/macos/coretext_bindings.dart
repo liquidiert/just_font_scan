@@ -5,13 +5,14 @@
 
 import 'dart:ffi';
 
-// --- Limits (duplicated from windows/dwrite_bindings.dart; see ROADMAP_MACOS §10) ---
+import '../limits.dart';
 
-/// Maximum sane font name length in UTF-16 code units.
-const int kMaxFontNameLength = 32767;
+// --- macOS-specific limits ---
 
-/// Maximum sane font family count (guard against corrupt descriptor arrays).
-const int kMaxFontFamilyCount = 10000;
+/// Max CoreText font descriptor count (face-level entries, not families).
+/// Each family typically contributes 1–20 descriptors, so ~10× the family
+/// limit is a comfortable sanity cap.
+const int kMaxDescriptorCount = kMaxFontFamilyCount * 10;
 
 // --- CF type aliases ---
 
@@ -187,8 +188,19 @@ class MacFontBindings {
         _objcPoolPush = objcPoolPush,
         _objcPoolPop = objcPoolPop;
 
+  static MacFontBindings? _cached;
+
+  /// Lazily-initialized shared instance for the current isolate.
+  ///
+  /// Reuses the same resolved symbols across scans to avoid redundant
+  /// `DynamicLibrary.open` and `lookupFunction` calls. If the initial load
+  /// throws, `_cached` stays null, so the next call retries rather than
+  /// negatively caching the failure.
+  static MacFontBindings get instance => _cached ??= load();
+
   /// Loads both frameworks, resolves all symbols, and dereferences the three
-  /// extern `CFStringRef` constants.
+  /// extern `CFStringRef` constants. Prefer [instance] for repeated use —
+  /// this factory always performs a fresh load.
   ///
   /// Throws if a required symbol cannot be resolved — callers should wrap in
   /// `try/catch` and treat failure as "return empty list".
