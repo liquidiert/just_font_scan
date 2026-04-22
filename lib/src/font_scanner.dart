@@ -29,7 +29,7 @@ class JustFontScan {
   /// Returns the [FontFamily] for [family], or `null` if not found.
   static FontFamily? getFamily({required String family}) {
     if (_cache == null) {
-      _scan();
+      scan();
     }
     return _cache!.firstWhereOrNull((f) => f.name == family);
   }
