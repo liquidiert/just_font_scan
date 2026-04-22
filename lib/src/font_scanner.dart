@@ -1,5 +1,7 @@
 import 'dart:io' show Platform;
 
+import 'package:just_font_scan/src/list.extension.dart';
+
 import 'models.dart';
 import 'windows/windows_font_scanner.dart' as windows;
 import 'macos/macos_font_scanner.dart' as macos;
@@ -22,6 +24,14 @@ class JustFontScan {
     if (_cache != null) return _cache!;
     _cache = _scan();
     return _cache!;
+  }
+
+  /// Returns the [FontFamily] for [family], or `null` if not found.
+  static FontFamily? getFamily({required String family}) {
+    if (_cache == null) {
+      _scan();
+    }
+    return _cache!.firstWhereOrNull((f) => f.name == family);
   }
 
   /// Clears the cached scan result so the next [scan] call rescans the system.
