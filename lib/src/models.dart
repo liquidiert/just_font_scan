@@ -28,6 +28,13 @@ class FontFamily {
   Font? get boldItalic =>
       children.firstWhereOrNull((f) => f.style == FontStyle.boldItalic);
 
+  List<FontStyle> get supportedStyles => [
+        if (regular != null) FontStyle.regular,
+        if (bold != null) FontStyle.bold,
+        if (italic != null) FontStyle.italic,
+        if (boldItalic != null) FontStyle.boldItalic,
+      ];
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
