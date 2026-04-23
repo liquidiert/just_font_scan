@@ -133,6 +133,14 @@ FontFamily? _scanFamily(
       if (font.address == 0) continue;
 
       try {
+        // DirectWrite creates artificial ("simulated") bold or italic faces
+        // for families that lack dedicated files for those styles.
+        // We skip them here so we only catalog the true physical font files
+        // and avoid flagging e.g., AMIRI-BOLD.TTF as BoldItalic.
+        if (fontGetSimulations(font) != DWRITE_FONT_SIMULATIONS_NONE) {
+          continue;
+        }
+
         final weight = fontGetWeight(font);
         if (weight < kDWriteFontWeightMin || weight > kDWriteFontWeightMax) {
           continue;
@@ -142,25 +150,22 @@ FontFamily? _scanFamily(
         // 0 = normal, 1 = oblique, 2 = italic
         final styleInt = fontGetStyle(font);
         FontStyle style;
-        if (styleInt == 2) {
-          // italic
-          style = weight >= 700 ? FontStyle.boldItalic : FontStyle.italic;
-        } else if (styleInt == 1) {
-          // oblique -> treat as italic-like
+        if (styleInt == 2 || styleInt == 1) {
+          // italic or oblique
           style = weight >= 700 ? FontStyle.boldItalic : FontStyle.italic;
         } else {
           // normal: map bold weights to FontStyle.bold and lighter to regular.
-          if (weight >= 700) {
-            style = FontStyle.bold;
-          } else {
-            style = FontStyle.regular;
-          }
+          style = weight >= 700 ? FontStyle.bold : FontStyle.regular;
         }
 
         // Best-effort file path for this font face.
         final filePath = getFirstFilePathForFont(font);
+        if (filePath.isEmpty) continue;
 
-        children.add(Font(weight: weight, style: style, filePath: filePath));
+        // Prevent adding the same physical file twice within the same family
+        if (!children.any((f) => f.filePath == filePath)) {
+          children.add(Font(weight: weight, style: style, filePath: filePath));
+        }
       } finally {
         comRelease(font);
       }

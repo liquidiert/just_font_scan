@@ -41,6 +41,20 @@ const int kMaxFontNameLength = 32767;
 const int kMaxFontFamilyCount = 10000;
 const int kMaxFontCount = 1000;
 
+const int DWRITE_FONT_WEIGHT_NORMAL = 400;
+const int DWRITE_FONT_WEIGHT_SEMI_BOLD = 600;
+const int DWRITE_FONT_WEIGHT_BOLD = 700;
+
+// --- Font Style (DWRITE_FONT_STYLE) ---
+const int DWRITE_FONT_STYLE_NORMAL = 0;
+const int DWRITE_FONT_STYLE_OBLIQUE = 1;
+const int DWRITE_FONT_STYLE_ITALIC = 2;
+
+// --- Font Simulations (DWRITE_FONT_SIMULATIONS) ---
+const int DWRITE_FONT_SIMULATIONS_NONE = 0x0000;
+const int DWRITE_FONT_SIMULATIONS_BOLD = 0x0001;
+const int DWRITE_FONT_SIMULATIONS_OBLIQUE = 0x0002;
+
 // --- GUIDs ---
 
 base class GUID extends Struct {
@@ -302,7 +316,7 @@ int fontFamilyGetFamilyNames(
 
 // --- IDWriteFont vtable ---
 
-typedef _GetWeightNative = Int32 Function(Pointer<IntPtr> self);
+typedef _GetWeightNative = Uint32 Function(Pointer<IntPtr> self);
 typedef _GetWeightDart = int Function(Pointer<IntPtr> self);
 
 int fontGetWeight(Pointer<IntPtr> font) {
@@ -310,11 +324,31 @@ int fontGetWeight(Pointer<IntPtr> font) {
   return fn(font);
 }
 
-typedef _GetStyleNative = Int32 Function(Pointer<IntPtr> self);
+/// IDWriteFont::GetStretch — vtable slot 5
+typedef _GetStretchNative = Uint32 Function(Pointer<IntPtr> self);
+typedef _GetStretchDart = int Function(Pointer<IntPtr> self);
+
+int fontGetStretch(Pointer<IntPtr> font) {
+  final fn =
+      vtableSlot<_GetStretchNative>(font, 5).asFunction<_GetStretchDart>();
+  return fn(font);
+}
+
+typedef _GetStyleNative = Uint32 Function(Pointer<IntPtr> self);
 typedef _GetStyleDart = int Function(Pointer<IntPtr> self);
 
 int fontGetStyle(Pointer<IntPtr> font) {
   final fn = vtableSlot<_GetStyleNative>(font, 6).asFunction<_GetStyleDart>();
+  return fn(font);
+}
+
+/// IDWriteFont::GetSimulations — vtable slot 10
+typedef _GetSimulationsNative = Uint32 Function(Pointer<IntPtr> self);
+typedef _GetSimulationsDart = int Function(Pointer<IntPtr> self);
+
+int fontGetSimulations(Pointer<IntPtr> font) {
+  final fn = vtableSlot<_GetSimulationsNative>(font, 10)
+      .asFunction<_GetSimulationsDart>();
   return fn(font);
 }
 
@@ -807,4 +841,45 @@ String getFirstFilePathForFont(Pointer<IntPtr> font) {
   }
 
   return paths.isNotEmpty ? paths.first : '';
+}
+
+/// Helper to determine if a font is strictly Bold.
+bool isFontBold(Pointer<IntPtr> font) {
+  if (font.address == 0) return false;
+
+  final weight = fontGetWeight(font) & 0xFFFFFFFF;
+  final sims = fontGetSimulations(font) & 0xFFFFFFFF;
+
+  // Safety check: Valid DWrite font weights are generally 1..1000.
+  // If an HRESULT error (like 0x80004002) is accidentally returned, it will be
+  // a huge number (e.g. 2147500034) which is >= 700. The <= 1000 check stops this.
+  bool isWeightBold =
+      (weight <= kDWriteFontWeightMax && weight >= DWRITE_FONT_WEIGHT_BOLD);
+  bool isSimBold =
+      (sims <= 0xFFFF && (sims & DWRITE_FONT_SIMULATIONS_BOLD) != 0);
+
+  return isWeightBold || isSimBold;
+}
+
+/// Helper to determine if a font is Italic or Oblique.
+bool isFontItalic(Pointer<IntPtr> font) {
+  if (font.address == 0) return false;
+
+  final style = fontGetStyle(font) & 0xFFFFFFFF;
+  final sims = fontGetSimulations(font) & 0xFFFFFFFF;
+
+  // No aggressive bitmasking (e.g. & 0xFF) here!
+  // Masking to 8 bits converts HRESULT errors like E_NOINTERFACE (0x80004002)
+  // directly into DWRITE_FONT_STYLE_ITALIC (2), creating random false positives.
+  bool isStyleItalic =
+      (style == DWRITE_FONT_STYLE_ITALIC || style == DWRITE_FONT_STYLE_OBLIQUE);
+  bool isSimItalic =
+      (sims <= 0xFFFF && (sims & DWRITE_FONT_SIMULATIONS_OBLIQUE) != 0);
+
+  return isStyleItalic || isSimItalic;
+}
+
+/// Helper to reliably determine if a font is strictly treated as Bold AND Italic.
+bool isFontBoldItalic(Pointer<IntPtr> font) {
+  return isFontBold(font) && isFontItalic(font);
 }
